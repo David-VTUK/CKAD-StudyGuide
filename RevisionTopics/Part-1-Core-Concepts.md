@@ -61,7 +61,7 @@ spec:
 
 ## Creating manifests from Scratch
 
-This requires an intimiate knowledge of the Kubernets API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
+This requires an intimiate knowledge of the Kubernetes API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
 
 To which a basic Pod spec can be created:
 
