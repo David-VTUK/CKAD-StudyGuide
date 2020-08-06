@@ -104,4 +104,82 @@ configSetting4=configValue4
 
 # Understand SecurityContexts
 
-A security context defines privilege and access control settings for a Pod or Container. For example
+A security context defines privilege and access control settings for a Pod **or** Container. `SecurityContexts` applied at the Pod level apply to all containers within that Pod. Alternatively, they can be set on specific containers.
+
+Common use cases are to set items like:
+
+* `runAsUser` and `runAsGroup` - The user and group ID's of the container
+* `privileged` - Sets whether the Pod(s) - A "privileged" container is given access to all devices on the host. This allows the container nearly all the same access as processes running on the host. This is useful for containers that want to use linux capabilities like manipulating the network stack and accessing devices.
+
+# Setting a SecurityContext at the Pod level
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-context-demo
+spec:
+  securityContext:
+    runAsUser: 1500
+  containers:
+  - name: sec-demo
+    image: busybox
+    command: [ "sh", "-c", "sleep 1h" ]
+  - name: sec-demo2
+    image: busybox
+    command: [ "sh", "-c", "sleep 1h" ]
+```
+
+Shelling into either container in the Pod and performing a `ps` command reveals the userid of the process:
+
+```
+kubectl exec -it security-context-demo -c sec-demo -- ps 
+
+PID   USER     TIME  COMMAND
+    1 1500      0:00 sleep 1h
+   11 1500      0:00 ps
+```
+
+```
+kubectl exec -it security-context-demo2 -c sec-demo -- ps 
+    
+PID   USER     TIME  COMMAND
+    1 1500      0:00 sleep 1h
+   11 1500      0:00 ps
+```
+
+Performing the same but for a specific container:
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-context-demo
+spec:
+  containers:
+  - name: sec-demo
+    image: busybox
+    command: [ "sh", "-c", "sleep 1h" ]
+    securityContext:
+      runAsUser: 1500
+  - name: sec-demo2
+    image: busybox
+    command: [ "sh", "-c", "sleep 1h" ]
+```
+
+Pod `sec-demo` runs as userID 1500
+
+```
+kubectl exec -it security-context-demo -c sec-demo -- ps  
+PID   USER     TIME  COMMAND
+    1 1500      0:00 sleep 1h
+    6 1500      0:00 ps
+```
+Pod `sec-demo2` runs as user root
+
+```
+kubectl exec -it security-context-demo -c sec-demo2 -- ps 
+PID   USER     TIME  COMMAND
+    1 root      0:00 sleep 1h
+    7 root      0:00 ps
+```
