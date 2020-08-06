@@ -61,7 +61,7 @@ spec:
 
 # Creating manifests from Scratch
 
-This requires an intimiate knowledge of the Kubernetes API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
+This requires an intimate knowledge of the Kubernetes API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
 
 To which a basic Pod spec can be created:
 
@@ -184,7 +184,7 @@ spec:
 
   The previous examples leverage the `container` stanza in the pod specification. These are typically used to run an application. There are, however, other container types, `init` being one of them.
 
-  `init`, or initalization containers are always exectured before those declared with the `container` stanza. If an `init` container fails, the Pod is declared as failed.
+  `init`, or initalization containers are always executed before those declared with the `container` stanza. If an `init` container fails, the Pod is declared as failed.
 
   Reasons for using `init` containers normally include:
 
