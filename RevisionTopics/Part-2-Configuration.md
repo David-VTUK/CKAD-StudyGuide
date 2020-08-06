@@ -92,7 +92,7 @@ spec:
       name: cm-demo
 ```
 
-The above will mount the configmap as a file in /tmp. A `exec` can vertify this:
+The above will mount the configmap as a file in /tmp. A `exec` can verify this:
 
 ```
 kubectl exec -it configmap-demo-pod-mount -- cat /tmp/configfile.txt          
