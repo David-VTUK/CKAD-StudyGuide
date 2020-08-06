@@ -14,7 +14,7 @@ Source https://kubernetes.io/docs/tutorials/kubernetes-basics/explore/explore-in
 
 There are a number of approaches to create a pod spec within K8s.
 
-## Pod Anatomy
+# Pod Anatomy
 
 The specification for a pod can be quite simple, breaking down a sample Nginx pod spec reveals the following:
 
@@ -59,7 +59,7 @@ spec:
   restartPolicy: Always
 ```
 
-## Creating manifests from Scratch
+# Creating manifests from Scratch
 
 This requires an intimiate knowledge of the Kubernetes API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
 
@@ -79,7 +79,7 @@ spec:
   restartPolicy: Always
 ```
 
-## Create manifests from a template
+# Create manifests from a template
 
 This is a slightly more user friendly option and is likely helpful during the exam, leveraging `kubectl` to generate some YAML:
 
@@ -103,7 +103,7 @@ spec:
 status: {}
 ```
 
-## Pod topology - Single container
+# Pod topology - Single container
 
 The below example highlights a single Pod with a single Container, but there are other Pod types.
 
@@ -120,7 +120,7 @@ spec:
     name: nginx
   restartPolicy: Always
 ```
-## Pod topology - Multiple containers
+# Pod topology - Multiple containers
 
 There are situations where having multiple containers in a pod is beneficial. Particularly in scenarios that require containers to be tightly coupled
 
@@ -133,7 +133,6 @@ metadata:
     run: nginxplusdebian
   name: nginxplusdebian
 spec:
-  restartPolicy: Never
   containers:
   - name: nginx-container
     image: nginx
@@ -143,4 +142,86 @@ spec:
     args: ["-c", "while true; do echo hello; sleep 10;done"]
 ```
 
-This example also makes use of the `command` and `args` definition. In this example, it's to prevent the debian container from crashing, as all containers need to run a process.
+This example also makes use of the `command` and `args` definition to prevent the debian container from crashing, as all containers need to run a process.
+
+
+# Pod topology - Multiple containers with shared storage
+
+Adding a `volume` stanza within the pod specification creates a volume of a certain type. As Pods share resources that are allocated to it, the volume can be mounted by both containers
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: two-containers
+spec:
+  restartPolicy: Never
+  volumes:
+  - name: shared-data
+    emptyDir: {}
+  containers:
+  - name: nginx-container
+    image: nginx
+    volumeMounts:
+    - name: shared-data
+      mountPath: /usr/share/nginx/html
+  - name: debian-container
+    image: debian
+    volumeMounts:
+    - name: shared-data
+      mountPath: /pod-data
+    command: ["/bin/sh"]
+    args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
+  ```
+
+  An `emptyDir` volume is first created when a Pod is assigned to a Node, and exists as long as that Pod is running on that node. As the name says, it is initially empty. Containers in the Pod can all read and write the same files in the emptyDir volume, though that volume can be mounted at the same or different paths in each Container. When a Pod is removed from a node for any reason, the data in the emptyDir is deleted forever.
+
+  Other volume types include (but not limited to) AzureDisk, iSCSI, NFS, Local, Fibre Channel and cinder.
+
+  Both containers mount the volume, `debian-container` writes into this directory, and `nginx` reads from it.
+
+  # Init containers
+
+  The previous examples leverage the `container` stanza in the pod specification. These are typically used to run an application. There are, however, other container types, `init` being one of them.
+
+  `init`, or initalization containers are always exectured before those declared with the `container` stanza. If an `init` container fails, the Pod is declared as failed.
+
+  Reasons for using `init` containers normally include:
+
+  * Preparing a volume by prepopulating (`git clone`)
+  * Waiting for a service or external resource to be ready
+
+  ```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+  ```
+
+  In this example, `init-container` will run until completion prior to `myapp-container` runs. The former will perform a `nslookup` every 2 seconds until it can resolve `myservice`. Once it can, the `init-container` will finish and `myapp-container` will run.
+
+
+  # Ephemeral containers
+
+Ephemeral containers may be run in an existing pod to perform user-initiated actions such as debugging. In order to add an ephemeral container to an existing pod, use the pod's ephemeralcontainers subresource. This field is alpha-level and is only honored by servers that enable the EphemeralContainers feature.
+
+Whereas `initContainers` are used proactively, `ephemeralContainers` are more geared towards reactive, interactive troubleshooting. For example, a Pod can be spun up with a single container:
+
+`kubectl run nginxtest --image=nginx`
+
+"Inject" a debug container based on the busybox image into this Pod.
+
+`kubectl alpha debug nginxtest -i --image=busybox`
+
+The image selected for debugging will have all the necessary tooling, binaries, utilities etc to debug the application running in the Pod.
