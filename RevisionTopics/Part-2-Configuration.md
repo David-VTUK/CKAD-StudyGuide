@@ -59,7 +59,7 @@ kubectl exec -it configmap-demo-pod -- env | grep CONFIG
 CONFIGMAP=somevalue
 ```
 
-# Using a ConfigMap as a volume mount
+# Mounting a configmap
 
 ConfigMaps can be quite versatile. Instead of populating environment variables we can also mount them as files. 
 
@@ -182,4 +182,33 @@ kubectl exec -it security-context-demo -c sec-demo2 -- ps
 PID   USER     TIME  COMMAND
     1 root      0:00 sleep 1h
     7 root      0:00 ps
+```
+
+
+# Define an application’s resource requirements
+
+The Kubernetes Pod spec permits the configuration of memory and CPU requests and limits within the `resources` stanza.
+
+A Container is guaranteed to have as much memory as it requests, but is not allowed to use more memory than its limit. 
+
+A Container cannot use more CPU than the configured limit. Provided the system has CPU time free, a container is guaranteed to be allocated as much CPU as it requests.
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: nginx
+  name: nginx-limits
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    resources:
+      limits:
+        cpu: 1
+        memory: "200Mi"
+      requests:
+        cpu: 0.5
+        memory: "100Mi"
 ```

@@ -56,7 +56,6 @@ spec:
   containers:
   - image: nginx
     name: nginx
-  restartPolicy: Always
 ```
 
 # Creating manifests from Scratch
@@ -76,7 +75,6 @@ spec:
   containers:
   - image: nginx
     name: nginx
-  restartPolicy: Always
 ```
 
 # Create manifests from a template
@@ -225,3 +223,29 @@ Whereas `initContainers` are used proactively, `ephemeralContainers` are more ge
 `kubectl alpha debug nginxtest -i --image=busybox`
 
 The image selected for debugging will have all the necessary tooling, binaries, utilities etc to debug the application running in the Pod.
+
+# Configuring environment variables
+
+Containers within a pod can have environment variables configured via the `env` stanza:
+
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-env
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    env:
+      - name: ENV_VAR_1
+        value: Somevariable 
+```
+
+Which can be validated by:
+
+```
+kubectl exec -it nginx-env -- env | grep ENV 
+ENV_VAR_1=Somevariable
+```
