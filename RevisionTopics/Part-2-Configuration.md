@@ -21,6 +21,14 @@ metadata:
 data:
   somekey: "somevalue"
 ```
+But it can also be created with `kubectl`:
+
+`kubectl create configmap vt-cm --from-literal=blog=virtualthoughts.co.uk`
+
+And populated from a file:
+
+`kubectl create configmap vt-cm --from-file=path/to/bar`
+
 
 # Using a ConfigMap to populate an environment variable
 
@@ -211,4 +219,160 @@ spec:
       requests:
         cpu: 0.5
         memory: "100Mi"
+```
+
+# Create and consume Secrets
+
+To reiterate a previous point - **ConfigMaps should not be used to store confidential information.**
+
+
+Secrets allow us to store and manage sensitive information pertaining to our applications, which can take the form of a variety of objects such as usernames, passwords, ssh keys and much more. 
+
+Similarly to configmaps, secrets are designed to decouple this information directly from the pod declaration.
+
+As part of a Kubernetes cluster stand up, secrets are already leveraged, and can be viewed them by executing the following:
+
+`kubectl get secrets -A`
+
+Secrets have three subtypes:
+
+* Docker-Registry - for use with a docker registry
+* Generic - created from a directory, file or literal
+* TLS - for TLS certificates
+
+Examples to create from `kubectl` :
+
+`kubectl create secret tls tls-secret --cert=path/to/tls.cert --key=path/to/tls.key`
+
+`kubectl create secret generic my-secret --from-literal=key1=supersecret`
+
+The anatomy of a secret manifest is as so:
+
+```
+apiVersion: v1
+data:
+  key1: c3VwZXJzZWNyZXQ=
+kind: Secret
+metadata:
+  name: my-secret
+```
+
+The contents of the secret key are **encoded** by default, **not encrypted**. To encrypt secrets at rest, a `EncryptionConfiguration` object needs to be present - more details of which can be found here: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+
+Consuming secrets is very similar to configmaps. (note as environment variables is one of a number of ways to leverage secrets)
+
+To encode a string in Base64 in Linux, use the `Base64` command
+
+```
+echo "dbu" | base64
+
+ZGJ1Cg==
+```
+
+```
+apiVersion: v1
+data:
+  username: ZGJ1Cg==
+  pass: ZGJwCg==
+kind: Secret
+metadata:
+  name: my-secret
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: secret-test-pod
+spec:
+ containers:
+ - name: secret-demo-pod
+   image: nginx
+   env:
+     - name: DB_Username
+       valueFrom:
+         secretKeyRef:
+           name: my-secret
+           key: username
+     - name: DB_Pass
+       valueFrom:
+         secretKeyRef:
+           name: my-secret
+           key: pass
+```
+
+```
+kubectl exec -it secret-demo-pod -- env | grep DB_
+
+DB_Username=dbu
+DB_Pass=dbp
+```
+
+# Understand ServiceAccounts
+
+A service account provides an identity for processes that run in a Pod, with this identity, Pods can interact with the Kubernetes API server.
+
+Pods that are created without an explicit service account binding are automatically assigned the `default` service account in the namespace for which it resides in. For example:
+
+```
+kubectl get po nginx -o yaml | grep serviceAccount
+
+serviceAccount: default
+serviceAccountName: default
+```
+The default ServiceAccounts only has limited rights, consequently, it is generally best practice to create a ServiceAccount for each application, giving it minimal rights it requires.
+
+The first step is to create a new Service Account:
+
+```
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+ name: serviceaccount-demo
+```
+Which, by itself, is not very helpful - it has no rights. For this, we need to create a `role` - which defines the permissions that objects bound to it will inherit:
+
+```
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+ name: list-pods
+ namespace: default
+rules:
+ — apiGroups:
+   — ''
+ resources:
+   — pods
+ verbs:
+   — list
+```
+
+Next, we need to bind the `service account` to this `role` with a `role binding`
+
+```
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: example-rolebinding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: serviceaccount-demo
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+
+```
+
+And finally, configure a Pod to use this `Service Account`
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-sa
+spec:
+  serviceAccountName: serviceaccount-demo
+  containers:
+  - image: nginx
+    name: nginx
 ```
