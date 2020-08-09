@@ -363,7 +363,7 @@ roleRef:
 
 ```
 
-And finally, configure a Pod to use this `Service Account`
+And finally, configure a Pod to use this `Service Account` as defined i the `spec` stanza.
 
 ```
 apiVersion: v1
