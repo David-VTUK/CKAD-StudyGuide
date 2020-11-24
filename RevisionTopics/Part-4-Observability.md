@@ -124,3 +124,88 @@ Specifying `--previous` will output the logs for the previous instance of the co
 ```
 kubectl logs --previous nginx
 ```
+
+# Understand how to monitor applications in Kubernetes
+
+Monitoring applications can be accomplished in a number of different ways employing a number of different metrics. However, a few key concepts come to mind:
+
+* Pods - How the individual Pods are performing.
+* Services - How the applications are being exposed
+* Cluster - How the cluster is performing. This will have an impact on the applications that reside within it.
+
+In reality, you would install and leverage something like Prometheus and Grafana to scrape and visualise cluster, application and component level performance statistics. However, for the purposes of this exam an appreciation of the K8s Metrics server should be evident.
+
+Metrics-server discovers all nodes on the cluster and queries each node's kubelet for CPU and memory usage, exposed via the `metrics.k8s.io API`. These can be accessed via `kubectl top` to display a number of different metrics:
+
+```
+Kubectl top node 
+
+NAME               CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+k3s-ranch-node-1   357m         8%     4402Mi          55%       
+k3s-ranch-node-2   165m         4%     2515Mi          31%       
+k3s-ranch-node-3   350m         8%     2627Mi          33%
+```
+
+```
+kubectl top pod -n kube-system     
+
+NAME                                     CPU(cores)   MEMORY(bytes)   
+coredns-66c464876b-sw4cq                 3m           11Mi            
+local-path-provisioner-7ff9579c6-g9p5t   1m           8Mi             
+metrics-server-7b4f8b595-5lc7h           2m           19Mi            
+svclb-traefik-8nthn                      0m           2Mi             
+svclb-traefik-fdkzc                      0m           2Mi             
+svclb-traefik-k4nn9                      0m           1Mi             
+traefik-5dd496474-ssrz4                  5m           23Mi    
+```
+
+# Understand Debugging in Kubernetes
+
+This is largely dependent on the application in question and what’s being leveraged in terms of the Kubernetes infrastructure, but from a top level.
+
+**Pods:**
+
+`kubectl get pods` - Get the pods currently running and their status
+
+`kubectl logs nginx-web` - Get stderr/stdout from pod
+
+`kubectl describe pod nginx-web` - Get detailed information about a pod, including the steps that were required to run it, for example pulling images, assigning to nodes, etc.
+
+```
+Events:
+ Type    Reason     Age   From                    Message
+ ----    ------     ----  ----                    -------
+ Normal  Scheduled  7s    default-scheduler       Successfully assigned default/nginx-web to k8
+S-worker-04
+
+ Normal  Pulling    6s    kubelet, k8s-worker-04  Pulling image "nginx"
+ Normal  Pulled     4s    kubelet, k8s-worker-04  Successfully pulled image "nginx"
+ Normal  Created    4s    kubelet, k8s-worker-04  Created container nginx
+ Normal  Started    3s    kubelet, k8s-worker-04  Started container nginx
+ ```
+
+**Services:**
+
+`kubectl get services`
+`kubectl describe service kubernetes`
+
+When diagnosing services, particularly those which are only accessible internally (the default service type) spin up a pod to which you can exec into to run tests.
+
+`kubectl run -i --tty busybox --image=busybox -- sh`
+
+At which point tools such as ping/telnet/nslookup. IE:
+
+`nslookup appservice.default.svc.cluster.local 10.0.0.10`
+
+**Deployments:**
+
+`Kubectl get deployments`
+`Kubectl describe deployment nginx`
+
+**General debugging steps:**
+
+
+  * Spin up a pod for testing internal cluster networking (service IP)
+  * Describe pods/services to ensure the correct endpoints are being added
+  * Ensure pods/services are exposed on the correct port
+  * Exec directly into pods and run commands locally
