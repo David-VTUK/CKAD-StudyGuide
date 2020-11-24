@@ -119,7 +119,7 @@ Events:
  Normal  Created                18m   kubelet, k8s-worker-01  Created container
  Normal  Started                18m   kubelet, k8s-worker-01  Started container
 ```
-Specifying `--previous` will print the logs for the previous instance of the container in a pod if it exists
+Specifying `--previous` will output the logs for the previous instance of the container in a pod if it exists
 
 ```
 kubectl logs --previous nginx
