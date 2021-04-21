@@ -41,7 +41,7 @@ spec:
     name: nginx
 ```
 
-Next is the meat of the pod spe. Which containers are in this pod, what name their given and what image they're based on. 
+Next is the meat of the pod spec. Which containers are in this pod, what name they're given and what image they're based on. 
 
 Putting it all together:
 
@@ -58,9 +58,9 @@ spec:
     name: nginx
 ```
 
-# Creating manifests from Scratch
+# Creating manifests from scratch
 
-This requires an intimate knowledge of the Kubernetes API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
+This requires intimate knowledge of the Kubernetes API spec for pods - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#pod-v1-core
 
 To which a basic Pod spec can be created:
 
@@ -103,7 +103,7 @@ status: {}
 
 # Pod topology - Single container
 
-The below example highlights a single Pod with a single Container, but there are other Pod types.
+The below example highlights a single Pod with a single Container, but there are other Pod types:
 
 ```
 apiVersion: v1
@@ -120,7 +120,7 @@ spec:
 ```
 # Pod topology - Multiple containers
 
-There are situations where having multiple containers in a pod is beneficial. Particularly in scenarios that require containers to be tightly coupled
+There are situations where having multiple containers in a pod is beneficial, particularly in scenarios that require containers to be tightly coupled:
 
 ```
 apiVersion: v1
@@ -140,12 +140,12 @@ spec:
     args: ["-c", "while true; do echo hello; sleep 10;done"]
 ```
 
-This example also makes use of the `command` and `args` definition to prevent the debian container from crashing, as all containers need to run a process.
+This example also makes use of the `command` and `args` definition to prevent the Debian container from crashing, as all containers need to run a process.
 
 
 # Pod topology - Multiple containers with shared storage
 
-Adding a `volume` stanza within the pod specification creates a volume of a certain type. As Pods share resources that are allocated to it, the volume can be mounted by both containers
+Adding a `volume` stanza within the pod specification creates a volume of a certain type. As Pods share resources that are allocated to it, the volume can be mounted by both containers:
 
 ```
 apiVersion: v1
@@ -207,12 +207,12 @@ spec:
     command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
   ```
 
-  In this example, `init-container` will run until completion prior to `myapp-container` runs. The former will perform a `nslookup` every 2 seconds until it can resolve `myservice`. Once it can, the `init-container` will finish and `myapp-container` will run.
+  In this example, `init-container` will run until completion prior to `myapp-container` running. The former will perform a `nslookup` every 2 seconds until it can resolve `myservice`. Once it can, the `init-container` will finish and `myapp-container` will run.
 
 
   # Ephemeral containers
 
-Ephemeral containers may be run in an existing pod to perform user-initiated actions such as debugging. In order to add an ephemeral container to an existing pod, use the pod's ephemeralcontainers subresource. This field is alpha-level and is only honored by servers that enable the EphemeralContainers feature.
+Ephemeral containers may be run in an existing pod to perform user-initiated actions such as debugging. In order to add an ephemeral container to an existing pod, use the pod's `ephemeralContainers` subresource. This field is alpha-level and is only honored by servers that enable the EphemeralContainers feature.
 
 Whereas `initContainers` are used proactively, `ephemeralContainers` are more geared towards reactive, interactive troubleshooting. For example, a Pod can be spun up with a single container:
 
@@ -227,7 +227,6 @@ The image selected for debugging will have all the necessary tooling, binaries, 
 # Configuring environment variables
 
 Containers within a pod can have environment variables configured via the `env` stanza:
-
 
 ```
 apiVersion: v1
